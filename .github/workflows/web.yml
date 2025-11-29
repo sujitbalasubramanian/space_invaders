@@ -20,11 +20,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install packages for act
+        if: env.ACT == 'true'
+        run: |
+          apt-get update
+          apt-get install -y unzip cmake make python3
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
         with:
-          version: 3.1.51 # or 'latest'
+          version: 3.1.51
 
       - name: Build Project
         run: |
@@ -44,7 +52,7 @@ jobs:
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "public"
+          path: public
 
   deploy:
     environment:
