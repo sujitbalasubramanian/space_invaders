@@ -29,11 +29,30 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
 
     target_link_options(${PROJECT_NAME} PRIVATE
+        # WebGL & Raylib
         -sUSE_GLFW=3
+        -sGL_ENABLE_GET_PROC_ADDRESS=1
         -sUSE_WEBGL2=1
-        -sASYNCIFY
-        -sALLOW_MEMORY_GROWTH=1
-        --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets
+
+        # Performance
         -O3
+        -flto
+        -sALLOW_MEMORY_GROWTH=1
+        -sASYNCIFY
+
+        # Disable debug UI / outline
+        -g0
+        -sASSERTIONS=0
+        -sSAFE_HEAP=0
+        -sDEMANGLE_SUPPORT=0
+        -sDISABLE_EXCEPTION_CATCHING=1
+
+        # Use relative paths for GitHub Pages
+        -sENVIRONMENT=web
+        -sRELOCATABLE=0
+        -sMODULARIZE=0
+
+        # Asset system
+        --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets
     )
 endif()

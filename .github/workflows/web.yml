@@ -17,17 +17,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install packages for act
-        if: env.ACT == 'true'
-        run: |
-          apt-get update
-          apt-get install -y unzip cmake make python3
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
@@ -40,13 +35,14 @@ jobs:
           emcmake cmake -B build -DCMAKE_BUILD_TYPE=Release
           cmake --build build
 
-      - name: Organize Files for Deployment
+      - name: Prepare Pages Artifact
         run: |
           mkdir -p public
           cp build/space_invaders.html public/index.html
           cp build/space_invaders.js public/
           cp build/space_invaders.wasm public/
           cp build/space_invaders.data public/
+          echo "Done preparing files:"
           ls -R public
 
       - name: Upload Pages Artifact
