@@ -1,20 +1,39 @@
 cmake_minimum_required(VERSION 3.15)
-project(space-invaders)
+project(space_invaders C)
 
-find_package(raylib 3.0 REQUIRED)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
 
-include_directories(include)
+set(SOURCES
+    src/main.c
+    src/game.c
+)
 
-file(GLOB SOURCES src/*.c)
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
+    message(STATUS "Building for Web (WASM) with Emscripten")
+else()
+    message(STATUS "Building for Native platform")
+endif()
+
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(raylib)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
+target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_link_libraries(${PROJECT_NAME} raylib)
 
-if (APPLE)
-    target_link_libraries(${PROJECT_NAME} "-framework IOKit")
-    target_link_libraries(${PROJECT_NAME} "-framework Cocoa")
-    target_link_libraries(${PROJECT_NAME} "-framework OpenGL")
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+
+    target_link_options(${PROJECT_NAME} PRIVATE
+        -sUSE_GLFW=3
+        -sUSE_WEBGL2=1
+        -sASYNCIFY
+        -sALLOW_MEMORY_GROWTH=1
+        --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets
+        -O3
+    )
 endif()
