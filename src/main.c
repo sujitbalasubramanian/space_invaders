@@ -5,11 +5,15 @@ int main(void) {
 
   while (!WindowShouldClose()) {
     CheckKeyBindingEvents();
-    PauseLock();
-    UpdateGameCanvas();
+
+    if (IsPaused()) {
+      PauseCanvas();
+    } else {
+      UpdateGameCanvas();
+    }
   }
 
-  UnloadAssets();
+  EndGame();
   CloseWindow();
   return 0;
 }

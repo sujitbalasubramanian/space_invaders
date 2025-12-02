@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Space Invaders</title>
+    <style>
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #888;
+      }
+      canvas {
+        display: block;
+        margin: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+      var Module = {
+        canvas: document.getElementById("canvas"),
+        locateFile: (path) => path,
+      };
+    </script>
+
+    <!-- REQUIRED placeholder -->
+    {{{ SCRIPT }}}
+  </body>
+</html>

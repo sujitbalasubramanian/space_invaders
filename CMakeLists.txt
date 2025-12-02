@@ -5,6 +5,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_C_STANDARD 11)
 
 set(SOURCES
+    src/bullet.c
     src/main.c
     src/game.c
 )
@@ -49,8 +50,8 @@ if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
 
         # Use relative paths for GitHub Pages
         -sENVIRONMENT=web
-        -sRELOCATABLE=0
         -sMODULARIZE=0
+        --shell-file ${CMAKE_SOURCE_DIR}/shell.html
 
         # Asset system
         --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets
