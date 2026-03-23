@@ -4,10 +4,6 @@
 #include <raylib.h>
 #include <stdbool.h>
 
-#if defined(__EMSCRIPTEN__)
-#include <emscripten.h>
-#endif
-
 typedef struct {
   Image image;
   Texture2D texture;
@@ -21,8 +17,9 @@ void InitWave(void);
 void InitGame(void);
 void EndGame(void);
 
-void CheckKeyBindingEvents(void);
+void PauseGame(void);
 bool IsPaused(void);
+void CheckKeyBindingEvents(void);
 void PauseCanvas(void);
 
 void GameStartCanvas(void);

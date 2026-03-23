@@ -2,6 +2,10 @@
 #include "bullet.h"
 #include "raylib.h"
 
+#if PLATFORM_WEB
+#include <emscripten.h>
+#endif
+
 static int screenWidth = 0;
 static int screenHeight = 0;
 static const char *screenTitle = "Space Invaders";
@@ -108,15 +112,22 @@ void EndGame() {
   UnAllocateBullets(enemyBullets);
 }
 
+#ifdef PLATFORM_WEB
+EMSCRIPTEN_KEEPALIVE
+#endif
+void PauseGame() { pause = !pause; }
+
+bool IsPaused() { return pause; }
+
 void CheckKeyBindingEvents() {
   if (IsKeyPressed(KEY_P))
-    pause = !pause;
+    PauseGame();
 
   if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
       IsKeyPressed(KEY_Q)) {
     EndGame();
     CloseWindow();
-#if defined(__EMSCRIPTEN__)
+#ifdef PLATFORM_WEB
     emscripten_run_script("window.close();");
 #endif
   }
@@ -126,8 +137,6 @@ void CheckKeyBindingEvents() {
     gameOver = false;
   }
 }
-
-bool IsPaused() { return pause; }
 
 void PauseCanvas() {
   BeginDrawing();
@@ -149,29 +158,30 @@ void ShootPlayerBullet() {
 }
 
 void ShootEnemyBullet() {
-  int col = GetRandomValue(0, ENEMEY_COL - 1);
-  int lastExistingRow = -1;
+  int col, row = -1;
+  col = row = -1;
+  int try = 5;
 
-  for (int i = ENEMEY_ROW - 1; i >= 0; i--) {
-    if (enemyShips[i][col].life > 0) {
-      lastExistingRow = i;
-      break;
+  while (--try) {
+    col = GetRandomValue(0, ENEMEY_COL - 1);
+    for (int i = ENEMEY_ROW - 1; i >= 0; i--) {
+      if (enemyShips[i][col].life > 0) {
+        row = i;
+        break;
+      }
     }
   }
 
-  if (lastExistingRow == -1)
+  if (row == -1)
     return;
 
-  Bullet b = {
-      .rec = {.height = 20,
-              .width = 10,
-              .x = enemyShips[lastExistingRow][col].position.x +
-                   (float)enemyShips[lastExistingRow][col].image.width / 2 - 5,
-              .y = enemyShips[lastExistingRow][col].position.y +
-                   enemyShips[lastExistingRow][col].image.height + 5},
-      .color = RED,
-      .speed = 4,
-      .direction = 1};
+  Rectangle rect = {.height = 20,
+                    .width = 10,
+                    .x = enemyShips[row][col].position.x +
+                         (float)enemyShips[row][col].image.width / 2 - 5,
+                    .y = enemyShips[row][col].position.y +
+                         enemyShips[row][col].image.height + 5};
+  Bullet b = {.rec = rect, .color = RED, .speed = 4, .direction = 1};
 
   InsertBulletList(enemyBullets, b);
 }

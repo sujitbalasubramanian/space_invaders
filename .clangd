@@ -1,0 +1,9 @@
+CompileFlags:
+  CompilationDatabase: "build"
+  Add:
+    [
+      "-DEMSCRIPTEN",
+      "--target=wasm32-unknown-emscripten",
+      "-isystem",
+      "/home/sujit/programs/space_invaders/emsdk/upstream/emscripten/cache/sysroot/include",
+    ]
