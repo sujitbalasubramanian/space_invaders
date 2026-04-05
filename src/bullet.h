@@ -17,6 +17,7 @@ typedef struct BulletNode {
 
 BulletList *CreateBulletList(void);
 void InsertBulletList(BulletList *, Bullet);
+void DeleteBullet(BulletList *baseptr, BulletList *toDelete);
 void DeleteBulletIf(BulletList *baseptr, bool (*fn)(BulletList *));
 void ForEachBullet(BulletList *, void (*fn)(BulletList *));
 void UnAllocateBullets(BulletList *baseptr);

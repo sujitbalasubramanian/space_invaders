@@ -19,6 +19,19 @@ void InsertBulletList(BulletList *baseptr, Bullet bullet) {
   baseptr->next = b;
 }
 
+void DeleteBullet(BulletList *baseptr, BulletList *toDelete) {
+  BulletList *curr = baseptr;
+  while (curr->next != NULL) {
+    if (curr->next == toDelete) {
+      BulletList *toDelete = curr->next;
+      curr->next = toDelete->next;
+      free(toDelete);
+    } else {
+      curr = curr->next;
+    }
+  }
+}
+
 void DeleteBulletIf(BulletList *baseptr, bool (*fn)(BulletList *)) {
   BulletList *curr = baseptr;
   while (curr->next != NULL) {

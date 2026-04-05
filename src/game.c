@@ -26,6 +26,8 @@ static const char *enemysImagePath[] = {
     "assets/enemy3.png", "assets/enemy3.png", "assets/enemy2.png",
     "assets/enemy2.png", "assets/enemy1.png", "assets/enemy1.png",
 };
+static const char *boomSound = "assets/explosion.wav";
+static Sound explosionSound = {0};
 
 static Image heartImage;
 static Texture2D heartTexture;
@@ -81,6 +83,9 @@ void InitGame() {
 
   SetTargetFPS(60);
 
+  InitAudioDevice();
+  explosionSound = LoadSound(boomSound);
+
   player.image = LoadImage(playerImagePath);
   player.texture = LoadTextureFromImage(player.image);
   player.position.x = (float)screenWidth / 2 - (float)player.texture.width / 2;
@@ -100,6 +105,7 @@ void InitGame() {
 void EndGame() {
   UnloadImage(player.image);
   UnloadTexture(player.texture);
+  UnloadSound(explosionSound);
 
   for (int i = 0; i < ENEMEY_ROW; i++) {
     for (int j = 0; j < ENEMEY_COL; j++) {
@@ -126,6 +132,7 @@ void CheckKeyBindingEvents() {
   if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
       IsKeyPressed(KEY_Q)) {
     EndGame();
+    CloseAudioDevice();
     CloseWindow();
 #ifdef PLATFORM_WEB
     emscripten_run_script("window.close();");
@@ -197,21 +204,53 @@ void RemoveOutOfSopeBullets() {
   DeleteBulletIf(playerBullets, PlayerBulletCleanUpLogic);
 }
 
+Rectangle TransformShipToRect(Ship *ship) {
+  return (Rectangle){.x = ship->position.x,
+                     .y = ship->position.y,
+                     .width = ship->texture.width,
+                     .height = ship->texture.height};
+}
+
+void CheckPlayerCollisionWithEnemyBullet(BulletList *bullet) {
+  const Rectangle playerRect = TransformShipToRect(&player);
+
+  if (CheckCollisionRecs(playerRect, bullet->bullet.rec)) {
+    PlaySound(explosionSound);
+    player.life--;
+    DeleteBullet(enemyBullets, bullet);
+  }
+}
+void CheckEnemyCollisionWithPlayerBullet(BulletList *bullet) {
+  for (int i = 0; i < ENEMEY_ROW; i++) {
+    for (int j = 0; j < ENEMEY_COL; j++) {
+      Ship *enemy = &enemyShips[i][j];
+      if (enemy->life > 0) {
+        const Rectangle enemyRect = TransformShipToRect(enemy);
+        if (CheckCollisionRecs(enemyRect, bullet->bullet.rec)) {
+          PlaySound(explosionSound);
+          enemy->life--;
+          if (enemy->life <= 0) {
+            score += 10;
+            if (score > highScore)
+              highScore = score;
+          }
+          DeleteBullet(playerBullets, bullet);
+        }
+      }
+    }
+  }
+}
+
 void CheckCollision() {
-  // TODO:
-  // check player collides with alien
-  // check alien reach end
-  // check bullets collides and delete
-  // increase score and high score
+  ForEachBullet(enemyBullets, CheckPlayerCollisionWithEnemyBullet);
+  ForEachBullet(playerBullets, CheckEnemyCollisionWithPlayerBullet);
 }
 
 void UpdateBullet(BulletList *bptr) {
   bptr->bullet.rec.y += (bptr->bullet.speed * bptr->bullet.direction);
 };
 
-void CheckWaveEnd() {
-  // TODO:
-}
+void CheckWaveEnd() {}
 
 void UpdateGame() {
   if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) {
