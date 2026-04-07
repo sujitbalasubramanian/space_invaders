@@ -67,6 +67,21 @@ void InitWave() {
       enemyShips[i][j].life = 3 * (ENEMEY_ROW - i);
     }
   }
+
+  enemyBullets = CreateBulletList();
+  playerBullets = CreateBulletList();
+}
+
+void EndWave() {
+  for (int i = 0; i < ENEMEY_ROW; i++) {
+    for (int j = 0; j < ENEMEY_COL; j++) {
+      UnloadImage(enemyShips[i][j].image);
+      UnloadTexture(enemyShips[i][j].texture);
+    }
+  }
+
+  UnAllocateBullets(playerBullets);
+  UnAllocateBullets(enemyBullets);
 }
 
 void InitGame() {
@@ -85,6 +100,10 @@ void InitGame() {
 
   InitAudioDevice();
   explosionSound = LoadSound(boomSound);
+  SetSoundVolume(explosionSound, 0.05f);
+
+  heartImage = LoadImage(heartImagePath);
+  heartTexture = LoadTextureFromImage(heartImage);
 
   player.image = LoadImage(playerImagePath);
   player.texture = LoadTextureFromImage(player.image);
@@ -92,14 +111,6 @@ void InitGame() {
   player.position.y = screenHeight - player.texture.height - 30;
   player.color = WHITE;
   player.life = 3;
-
-  heartImage = LoadImage(heartImagePath);
-  heartTexture = LoadTextureFromImage(heartImage);
-
-  enemyBullets = CreateBulletList();
-  playerBullets = CreateBulletList();
-
-  InitWave();
 }
 
 void EndGame() {
@@ -107,15 +118,7 @@ void EndGame() {
   UnloadTexture(player.texture);
   UnloadSound(explosionSound);
 
-  for (int i = 0; i < ENEMEY_ROW; i++) {
-    for (int j = 0; j < ENEMEY_COL; j++) {
-      UnloadImage(enemyShips[i][j].image);
-      UnloadTexture(enemyShips[i][j].texture);
-    }
-  }
-
-  UnAllocateBullets(playerBullets);
-  UnAllocateBullets(enemyBullets);
+  EndWave();
 }
 
 #ifdef PLATFORM_WEB
@@ -140,6 +143,14 @@ void CheckKeyBindingEvents() {
   }
 
   if (IsKeyPressed(KEY_ENTER) && !gameStarted) {
+    // Reset player position and life
+    player.position.x =
+        (float)screenWidth / 2 - (float)player.texture.width / 2;
+    player.position.y = screenHeight - player.texture.height - 30;
+    player.life = 3;
+    score = 0;
+
+    InitWave();
     gameStarted = true;
     gameOver = false;
   }
@@ -220,6 +231,7 @@ void CheckPlayerCollisionWithEnemyBullet(BulletList *bullet) {
     DeleteBullet(enemyBullets, bullet);
   }
 }
+
 void CheckEnemyCollisionWithPlayerBullet(BulletList *bullet) {
   for (int i = 0; i < ENEMEY_ROW; i++) {
     for (int j = 0; j < ENEMEY_COL; j++) {
@@ -227,9 +239,9 @@ void CheckEnemyCollisionWithPlayerBullet(BulletList *bullet) {
       if (enemy->life > 0) {
         const Rectangle enemyRect = TransformShipToRect(enemy);
         if (CheckCollisionRecs(enemyRect, bullet->bullet.rec)) {
-          PlaySound(explosionSound);
           enemy->life--;
           if (enemy->life <= 0) {
+            PlaySound(explosionSound);
             score += 10;
             if (score > highScore)
               highScore = score;
@@ -239,9 +251,35 @@ void CheckEnemyCollisionWithPlayerBullet(BulletList *bullet) {
       }
     }
   }
+
+  BulletList *head = enemyBullets;
+
+  while (head) {
+    if (CheckCollisionRecs(bullet->bullet.rec, head->bullet.rec)) {
+      DeleteBullet(enemyBullets, head);
+      DeleteBullet(playerBullets, bullet);
+    }
+    head = head->next;
+  }
 }
 
 void CheckCollision() {
+  const Rectangle playerRect = TransformShipToRect(&player);
+
+  for (int i = 0; i < ENEMEY_ROW; i++) {
+    for (int j = 0; j < ENEMEY_COL; j++) {
+      Ship *enemy = &enemyShips[i][j];
+      if (enemy->life > 0) {
+        const Rectangle enemyRect = TransformShipToRect(enemy);
+        if (CheckCollisionRecs(enemyRect, playerRect)) {
+          PlaySound(explosionSound);
+          player.life = 0;
+          return;
+        }
+      }
+    }
+  }
+
   ForEachBullet(enemyBullets, CheckPlayerCollisionWithEnemyBullet);
   ForEachBullet(playerBullets, CheckEnemyCollisionWithPlayerBullet);
 }
@@ -354,12 +392,19 @@ void GameStartCanvas() {
 void GameOverCanvas() {
   BeginDrawing();
   ClearBackground(BLACK);
+  DrawText(TextFormat("High Score: %ld", highScore), 10, 10, fontSize + 6, RED);
+  DrawText(TextFormat("Score: %ld", score), 10, 50, fontSize + 6, RED);
   DrawText("Game Over! Press [Enter] to restart the game", 190, 200, fontSize,
            LIGHTGRAY);
   EndDrawing();
 }
 
 void UpdateGameCanvas() {
+  if (player.life <= 0) {
+    gameOver = true;
+    gameStarted = false;
+  }
+
   if (gameOver)
     GameOverCanvas();
   else if (!gameStarted)
